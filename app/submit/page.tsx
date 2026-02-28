@@ -18,28 +18,28 @@ export default function SubmitPage() {
     setResult(null)
 
     try {
-      // In a real implementation, this would send to a Cloudflare Worker
-      // that creates a GitHub PR or issue
-      const response = await fetch('/api/submit-skill', {
+      // Send to Cloudflare Worker
+      const response = await fetch('https://openclaw-skills-hub-api.zhangxun057.workers.dev', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       })
 
+      const data = await response.json()
+
       if (response.ok) {
         setResult({
           success: true,
-          message: '技能提交成功！我们会尽快审核并合并到仓库中。',
+          message: `技能提交成功！Issue 已创建：${data.issueUrl}`,
         })
         setFormData({ skillName: '', content: '', contributor: '' })
       } else {
-        throw new Error('提交失败')
+        throw new Error(data.error || '提交失败')
       }
     } catch (error) {
-      // For now, show a message about the Git workflow
       setResult({
         success: false,
-        message: '当前需要通过 GitHub 提交。请查看下方的替代方案。',
+        message: error instanceof Error ? error.message : '提交失败，请重试',
       })
     } finally {
       setSubmitting(false)
@@ -67,28 +67,13 @@ export default function SubmitPage() {
       </header>
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Alternative Methods */}
+        {/* Info */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
-          <h2 className="text-lg font-semibold text-blue-900 mb-3">📋 当前推荐的提交方式</h2>
+          <h2 className="text-lg font-semibold text-blue-900 mb-3">📋 提交说明</h2>
           <p className="text-blue-800 mb-4">
-            由于技术限制，当前请通过以下方式提交技能：
+            填写下方表单提交技能，系统会自动创建 GitHub Issue。张洵审核后会合并到仓库。
           </p>
-          <ol className="list-decimal list-inside space-y-2 text-blue-800">
-            <li>
-              Fork 
-              <a
-                href="https://github.com/zhangxun057/openclaw-skills"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline font-medium"
-              >
-                GitHub 仓库
-              </a>
-            </li>
-            <li>在 <code>skills/</code> 目录下创建你的技能文件</li>
-            <li>提交 Pull Request</li>
-          </ol>
-          <div className="mt-4 p-4 bg-white rounded-lg">
+          <div className="p-4 bg-white rounded-lg">
             <h3 className="font-medium text-gray-900 mb-2">技能文件模板：</h3>
             <pre className="text-sm text-gray-600 bg-gray-100 p-3 rounded overflow-x-auto">
 {`# Skill: 技能名称
@@ -128,8 +113,8 @@ _日期: 2026-02-28_`}
           </div>
         )}
 
-        {/* Form - Disabled for now */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md border border-gray-200 p-6 opacity-50 pointer-events-none">
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
           <div className="mb-4">
             <label htmlFor="skillName" className="block text-sm font-medium text-gray-700 mb-1">
               技能名称
